@@ -1,6 +1,6 @@
 {
   "name": "@knod/expo-simple-camera",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Simple expo camera example",
   "main": "SimpleCamera.js",
   "scripts": {
@@ -27,8 +27,8 @@
     "url": "https://github.com/knod/expo-simple-camera/issues"
   },
   "homepage": "https://github.com/knod/expo-simple-camera#readme",
-  "dependencies": {
-    "@knod/flex-button": "^1.0.1",
+  "peerDependencies": {
+    "@knod/flex-button": "^1.1.1",
     "expo": "^25.0.0",
     "react": "^16.2.0",
     "react-native": "^0.54.2"
