@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, CameraRoll } from 'react-native';
 import { Camera, Permissions } from 'expo';
-import { FlexButton } from '@knod/flex-button';
 
 
 export default class SimpleCamera extends Component {
@@ -102,18 +101,20 @@ export default class SimpleCamera extends Component {
         }
     }
 
-    renderRecordingButton ( isRecording ) {
+    renderRecordingButton = ( isRecording ) => {
+        var { StyledButton } = this.props;
+
         if ( isRecording ) {
             return (
-                <FlexButton onPress={this.stopRecording} extraStyles={styles.stopButton}>
+                <StyledButton onPress={this.stopRecording} extraStyles={styles.stopButton}>
                     {'X'}
-                </FlexButton>
+                </StyledButton>
             );
         } else {
             return (
-                <FlexButton onPress={this.record} extraStyles={styles.recordButton}>
+                <StyledButton onPress={this.record} extraStyles={styles.recordButton}>
                     {'O'}
-                </FlexButton>
+                </StyledButton>
             );
         }
     } 
@@ -147,6 +148,7 @@ export default class SimpleCamera extends Component {
             vidId,
             hasPermissions,
         } = this.state;
+        var { StyledButton } = this.props;
 
         var recordingContent = this.renderRecordingButton( recording );
 
@@ -157,27 +159,26 @@ export default class SimpleCamera extends Component {
                 type    = {direction}
                 zoom    = {zoom}>
                 <View style={styles.topRow}>
-                    <FlexButton onPress={this.toggleFacing.bind(this)}>{'FLIP'}</FlexButton>
+                    <StyledButton onPress={this.toggleFacing.bind(this)}>{'FLIP'}</StyledButton>
                 </View>
                 <View style={styles.bottomRow}>
                     <View style={styles.bottomRowGroup}>
-                        <FlexButton onPress={this.zoomIn.bind(this)}>{'+'}</FlexButton>
-                        <FlexButton onPress={this.zoomOut.bind(this)}>{'-'}</FlexButton>
+                        <StyledButton onPress={this.zoomIn.bind(this)}>{'+'}</StyledButton>
+                        <StyledButton onPress={this.zoomOut.bind(this)}>{'-'}</StyledButton>
                     </View>
                     <View style={styles.bottomRowGroup}>{ recordingContent }</View>
                     <View style={styles.bottomRowGroup}>
-                        <FlexButton
+                        <StyledButton
                             onPress={this.props.onCancel}
                             extraStyles={styles.cancelButton}
                             textStyles={styles.cancleText}>
                                 {'Cancel'}
-                        </FlexButton>
+                        </StyledButton>
                     </View>
                 </View>
             </Camera>
         );
     }
-
 
     render () {
         const cameraScreenContent = this.state.hasPermissions
