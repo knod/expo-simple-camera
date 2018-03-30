@@ -15,19 +15,23 @@ export default class SimpleCamera extends Component {
         hasPermissions: false,
     };
 
-    async getVisualPermissions () {
+    getVisualPermissions = async () => {
         var { status } = await Permissions.askAsync( Permissions.CAMERA );
         return status === 'granted';
     }
 
-    async getAudioPermissions () {
+    getAudioPermissions = async () => {
         var { status } = await Permissions.askAsync( Permissions.AUDIO_RECORDING );
         return status === 'granted';
     }
 
-    async getRollPermissions () {
+    getRollPermissions = async () => {
         // Seems to not stop camera opening
         var { status } = await Permissions.askAsync( Permissions.CAMERA_ROLL );
+        /** @todo When permissions have been denied, this comes out 'granted'
+                when opening camera and then permissions are denied when we
+                try to save the recording. */
+        this.setState({ debug: JSON.stringify( status ) });
         return status === 'granted';
     }
 
@@ -46,7 +50,7 @@ export default class SimpleCamera extends Component {
 
         this.setState({
             hasPermissions: canImage && canAudio && canSave,
-            notGranted: notGranted
+            notGranted: notGranted,
         });
     }
 
@@ -58,22 +62,23 @@ export default class SimpleCamera extends Component {
         }
     }
 
-    toggleFacing () {
+    toggleFacing = () => {
         var direction = this.state.direction === 'back' ? 'front' : 'back';
         this.setState({ direction: direction });
     }
 
-    zoomOut () {
+    zoomOut = () => {
         var zoom = this.state.zoom - 0.1 < 0 ? 0 : this.state.zoom - 0.1;
         this.setState({ zoom: zoom });
     }
 
-    zoomIn () {
+    zoomIn = () => {
         var zoom = this.state.zoom + 0.1 > 1 ? 1 : this.state.zoom + 0.1;
         this.setState({ zoom: zoom });
     }
 
-    record = () => {
+    record = (canSave) => {
+                    
         /** @todo Do we want to set a maxFileSize? */
         if (this.camera) {
 
@@ -82,10 +87,10 @@ export default class SimpleCamera extends Component {
                 CameraRoll.saveToCameraRoll( data.uri ).then(( uri ) => {
                     /** @todo Save vid IDs and vid ID to permanent storage so we can fetch them in the future */
                     var ID      = this.state.vidId + 1,
-                        uris    = {...this.state.vidURIs}
+                        uris    = {...this.state.vidURIs};
                     uris[ ID ]  = uri;
-                    this.setState({ vidId: ID, vidURIs: uris, debug: uri });
-                    this.props.onStop({ vidId: ID, vidURIs: uris, debug: uri });
+                    this.setState({ vidId: ID, vidURIs: uris, });
+                    this.props.onStop({ vidId: ID, vidURIs: uris });
                 });
             });
 
@@ -101,91 +106,69 @@ export default class SimpleCamera extends Component {
         }
     }
 
-    renderRecordingButton = ( isRecording ) => {
-        var { StyledButton } = this.props;
+    renderOverlay = () => {
 
-        if ( isRecording ) {
-            return (
-                <StyledButton onPress={this.stopRecording} extraStyles={styles.stopButton}>
-                    {'X'}
-                </StyledButton>
-            );
-        } else {
-            return (
-                <StyledButton onPress={this.record} extraStyles={styles.recordButton}>
-                    {'O'}
-                </StyledButton>
-            );
-        }
-    } 
+        var {
+            Overlay,
+            onCancel,
+        } = this.props;
 
-    renderNoPermissions () {
-        var notGranted  = this.state.notGranted,
-            length      = notGranted.length,
-            kinds       = '';
-        if ( length > 1 ) {
-            notGranted[ length - 1 ] = 'and ' + notGranted[ length - 1 ];
-        }
-        if ( length > 2 ) { kinds = notGranted.join(', '); }
-        else { kinds = notGranted.join(' '); }
-
-        var message = 'Permissions for ' + kinds + ' have not been granted - cannot open camera preview.';
+        var {
+            recording,
+            hasPermissions,
+            notGranted,
+        } = this.state;
 
         return (
-            <View style={styles.permissions}>
-                <Text style={{ color: 'black' }}>{ message }</Text>
-            </View>
+            <Overlay
+                toggleFacing    = { this.toggleFacing }
+                zoomIn          = { this.zoomIn }
+                zoomOut         = { this.zoomOut }
+                debug           = { this.debug }
+                stopRecording   = { this.stopRecording }
+                record          = { this.record }
+                recording       = { recording }
+                hasPermissions  = { hasPermissions }
+                notGranted      = { notGranted }
+                onCancel        = { onCancel } />
         );
     }
 
-    renderCamera () {
+    renderWithCamera = ( overlay ) => {
 
-        var {
-            debug,
-            recording,
-            zoom,
-            direction,
-            vidId,
-            hasPermissions,
-        } = this.state;
-        var { StyledButton } = this.props;
-
-        var recordingContent = this.renderRecordingButton( recording );
+        var { zoom, direction, } = this.state;
 
         return (
             <Camera
-                ref     = {ref => { this.camera = ref; }}
+                ref     = { ref => { this.camera = ref; }}
                 style   = { styles.camera }
-                type    = {direction}
-                zoom    = {zoom}>
-                <View style={styles.topRow}>
-                    <StyledButton onPress={this.toggleFacing.bind(this)}>{'FLIP'}</StyledButton>
-                </View>
-                <View style={styles.bottomRow}>
-                    <View style={styles.bottomRowGroup}>
-                        <StyledButton onPress={this.zoomIn.bind(this)}>{'+'}</StyledButton>
-                        <StyledButton onPress={this.zoomOut.bind(this)}>{'-'}</StyledButton>
-                    </View>
-                    <View style={styles.bottomRowGroup}>{ recordingContent }</View>
-                    <View style={styles.bottomRowGroup}>
-                        <StyledButton
-                            onPress={this.props.onCancel}
-                            extraStyles={styles.cancelButton}
-                            textStyles={styles.cancleText}>
-                                {'Cancel'}
-                        </StyledButton>
-                    </View>
-                </View>
+                type    = { direction }
+                zoom    = { zoom }>
+                    { overlay }
             </Camera>
         );
     }
 
     render () {
-        const cameraScreenContent = this.state.hasPermissions
-            ? this.renderCamera()
-            : this.renderNoPermissions();
-        return <View style={styles.container}>{ cameraScreenContent }</View>;
+
+        var { hasPermissions, Overlay, debug } = this.state;
+
+        var overlayWithProps = this.renderOverlay(),
+            // Without permissions, will just render permissions denial overlay without camera
+            toRender         = overlayWithProps;
+
+        if ( hasPermissions ) {
+            // With permissions, will render camera with UI overlay
+            toRender = this.renderWithCamera( overlayWithProps );
+        }
+
+        // Add this back in for debugging
+        // <Text>{ debug }</Text>
+        return <View style={styles.container}>
+            { toRender }
+        </View>
     }
+
 }  // End <SimpleCamera>
 
 
@@ -199,34 +182,6 @@ const styles = StyleSheet.create({
         flex:           1,
         justifyContent: 'space-between',
     },
-    permissions: {
-        flex:           1,
-        alignItems:     'center',
-        justifyContent: 'center',
-        padding:        10,
-    },
-    topRow: {
-        justifyContent: 'space-around',
-        flexDirection:  'row',
-        marginLeft:     100,
-        marginRight:    100,
-        marginTop:      20,
-    },
-    bottomRow: {
-        margin:         10,
-        flexDirection:  'row',
-        justifyContent: 'space-between'
-    },
-    bottomRowGroup: {
-        flex:           0.3,
-        flexDirection:  'row',
-        alignItems:     'center',
-        justifyContent: 'center',
-    },
-    recordButton:   { backgroundColor: 'darkseagreen', },
-    stopButton:     { backgroundColor: 'tomato' },
-    cancelButton:   { borderColor: 'tomato' },
-    cancleText:     { color: 'black', },
 });  // End styles
 
 

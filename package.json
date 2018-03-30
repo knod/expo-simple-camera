@@ -1,7 +1,7 @@
 {
   "name": "@knod/expo-simple-camera",
-  "version": "1.1.0",
-  "description": "Simple expo camera example",
+  "version": "2.0.0",
+  "description": "Simple expo camera example with camera functionality separated from overlay styles.",
   "main": "SimpleCamera.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -19,7 +19,8 @@
     "save",
     "cancel",
     "video",
-    "recording"
+    "recording",
+    "zoom"
   ],
   "author": "knod",
   "license": "ISC",
